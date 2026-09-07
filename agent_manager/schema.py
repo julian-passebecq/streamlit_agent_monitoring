@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 SCHEMA_VERSION = "1.0"
-APP_VERSION = "1.1"
+APP_VERSION = "1.2"
 
 ALLOWED_AGENT_STATUSES = {
     "draft",
@@ -47,6 +47,19 @@ FEATURE_STATUSES = [
     "deprecated",
 ]
 FEATURE_KINDS = ["feature", "bug", "problem", "refactor", "research", "qa", "documentation"]
+
+SETUP_STAGES = [
+    "project_map",
+    "selected_app_audit",
+    "director_organization",
+    "director_feature_plan",
+    "agent_bootstrap",
+    "ready",
+]
+
+APP_LIFECYCLE_STATUSES = ["active", "paused", "stopped", "unknown"]
+APP_KINDS = ["application", "framework", "library", "consumer", "tool", "website", "service", "experiment", "other"]
+
 
 DEFAULT_TECHNICAL_STACK: dict[str, Any] = {
     "languages": [],
@@ -279,6 +292,149 @@ def validate_bootstrap_audit(data: dict[str, Any], project: dict[str, Any]) -> l
             errors.append(f"next_cycle.phase {phase!r} is not supported.")
     return errors
 
+def validate_project_map(data: dict[str, Any], project: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    if not isinstance(data, dict):
+        return ["Project map must be a JSON object."]
+    if data.get("schema_version") != SCHEMA_VERSION:
+        errors.append(f"schema_version must be {SCHEMA_VERSION!r}.")
+    if data.get("type") != "chatgpt_project_map":
+        errors.append("type must be 'chatgpt_project_map'.")
+    if data.get("manager_project_id") != project.get("project", {}).get("id"):
+        errors.append("manager_project_id does not match the selected Agent Manager project.")
+    chatgpt_project = data.get("chatgpt_project")
+    if not isinstance(chatgpt_project, dict) or not chatgpt_project.get("name"):
+        errors.append("chatgpt_project.name is required.")
+    apps = data.get("apps")
+    if not isinstance(apps, list) or not apps:
+        errors.append("apps must be a non-empty list.")
+    else:
+        seen: set[str] = set()
+        for idx, app in enumerate(apps):
+            if not isinstance(app, dict):
+                errors.append(f"apps[{idx}] must be an object.")
+                continue
+            app_id = app.get("id")
+            if not app_id:
+                errors.append(f"apps[{idx}].id is required.")
+            elif app_id in seen:
+                errors.append(f"Duplicate app id: {app_id!r}.")
+            else:
+                seen.add(app_id)
+            if not app.get("name"):
+                errors.append(f"apps[{idx}].name is required.")
+            status = app.get("status", "unknown")
+            if status not in APP_LIFECYCLE_STATUSES:
+                errors.append(f"apps[{idx}].status {status!r} is not supported.")
+    return errors
+
+
+def validate_selected_app_audit(data: dict[str, Any], project: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    if not isinstance(data, dict):
+        return ["Selected-app audit must be a JSON object."]
+    if data.get("schema_version") != SCHEMA_VERSION:
+        errors.append(f"schema_version must be {SCHEMA_VERSION!r}.")
+    if data.get("type") != "selected_app_audit":
+        errors.append("type must be 'selected_app_audit'.")
+    if data.get("project_id") != project.get("project", {}).get("id"):
+        errors.append("project_id does not match the selected Agent Manager project.")
+    selected = project.get("onboarding", {}).get("selected_app_id", "")
+    if selected and data.get("selected_app_id") != selected:
+        errors.append(f"selected_app_id must match the selected app ({selected!r}).")
+    if not isinstance(data.get("technical_stack"), dict):
+        errors.append("technical_stack must be an object.")
+    if not isinstance(data.get("git_state"), dict):
+        errors.append("git_state must be an object.")
+    repos = data.get("repositories")
+    if repos is not None and not isinstance(repos, list):
+        errors.append("repositories must be a list when provided.")
+    chats = data.get("chat_inventory")
+    if chats is not None and not isinstance(chats, list):
+        errors.append("chat_inventory must be a list when provided.")
+    return errors
+
+
+def validate_director_organization_plan(data: dict[str, Any], project: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    if not isinstance(data, dict):
+        return ["Director organization plan must be a JSON object."]
+    if data.get("schema_version") != SCHEMA_VERSION:
+        errors.append(f"schema_version must be {SCHEMA_VERSION!r}.")
+    if data.get("type") != "director_organization_plan":
+        errors.append("type must be 'director_organization_plan'.")
+    if data.get("project_id") != project.get("project", {}).get("id"):
+        errors.append("project_id does not match the selected Agent Manager project.")
+    org = data.get("organization")
+    if not isinstance(org, dict):
+        errors.append("organization must be an object.")
+    else:
+        agents = org.get("agents")
+        if not isinstance(agents, dict) or not agents:
+            errors.append("organization.agents must be a non-empty object.")
+        else:
+            for aid, agent in agents.items():
+                if not isinstance(agent, dict):
+                    errors.append(f"organization.agents.{aid} must be an object.")
+                    continue
+                for field in ("name", "role", "model_label", "custom_instructions", "reporting_contract"):
+                    if not agent.get(field):
+                        errors.append(f"organization.agents.{aid}.{field} is required.")
+    return errors
+
+
+def validate_director_feature_plan(data: dict[str, Any], project: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    if not isinstance(data, dict):
+        return ["Director feature plan must be a JSON object."]
+    if data.get("schema_version") != SCHEMA_VERSION:
+        errors.append(f"schema_version must be {SCHEMA_VERSION!r}.")
+    if data.get("type") != "director_feature_plan":
+        errors.append("type must be 'director_feature_plan'.")
+    if data.get("project_id") != project.get("project", {}).get("id"):
+        errors.append("project_id does not match the selected Agent Manager project.")
+    board = data.get("feature_board")
+    if not isinstance(board, dict) or not isinstance(board.get("features"), list):
+        errors.append("feature_board.features must be a list.")
+    cycle = data.get("next_cycle")
+    if not isinstance(cycle, dict):
+        errors.append("next_cycle must be an object.")
+    else:
+        for field in ("id", "number", "title", "objective"):
+            if cycle.get(field) in (None, ""):
+                errors.append(f"next_cycle.{field} is required.")
+        phase = cycle.get("phase", "director_plan")
+        if phase not in CYCLE_PHASES:
+            errors.append(f"next_cycle.phase {phase!r} is not supported.")
+    return errors
+
+
+def validate_agent_bootstrap_pack(data: dict[str, Any], project: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    if not isinstance(data, dict):
+        return ["Agent bootstrap pack must be a JSON object."]
+    if data.get("schema_version") != SCHEMA_VERSION:
+        errors.append(f"schema_version must be {SCHEMA_VERSION!r}.")
+    if data.get("type") != "agent_bootstrap_pack":
+        errors.append("type must be 'agent_bootstrap_pack'.")
+    if data.get("project_id") != project.get("project", {}).get("id"):
+        errors.append("project_id does not match the selected Agent Manager project.")
+    agents = data.get("agents")
+    if not isinstance(agents, dict) or not agents:
+        errors.append("agents must be a non-empty object.")
+    else:
+        known = set(project.get("agents", {}))
+        for aid, agent in agents.items():
+            if aid not in known:
+                errors.append(f"Unknown bootstrap agent id: {aid!r}.")
+            if not isinstance(agent, dict):
+                errors.append(f"agents.{aid} must be an object.")
+                continue
+            for field in ("custom_instructions", "reporting_contract"):
+                if not agent.get(field):
+                    errors.append(f"agents.{aid}.{field} is required.")
+    return errors
+
 
 def new_blank_project(project_id: str, name: str) -> dict[str, Any]:
     return {
@@ -311,6 +467,23 @@ def new_blank_project(project_id: str, name: str) -> dict[str, Any]:
             "pro_agent_id": "",
             "director_agent_id": "",
             "default_questions": [],
+        },
+        "onboarding": {
+            "stage": "project_map",
+            "chatgpt_project_name": "",
+            "chatgpt_project_url": "",
+            "setup_chat_url": "",
+            "setup_model_label": "GPT-5.6 Sol / High",
+            "project_map": {},
+            "selected_app_id": "",
+            "selected_app_audit": {},
+            "director_organization_plan": {},
+            "director_feature_plan": {},
+            "agent_bootstrap_pack": {},
+        },
+        "archive": {
+            "repository_url": "",
+            "notes": "",
         },
         "created_at": utc_now_iso(),
         "updated_at": utc_now_iso(),

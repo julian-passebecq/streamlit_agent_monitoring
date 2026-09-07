@@ -71,3 +71,65 @@ def test_bootstrap_audit_preserves_existing_chat_url(tmp_path):
     assert saved["agents"]["director"]["custom_instructions"] == "updated role"
     shell = store.load_run("datapass-v4", "CYCLE-2")
     assert shell["cycle"]["number"] == 2
+
+
+def test_five_step_setup_artifacts_and_archive(tmp_path):
+    from agent_manager.project_mapping_packets import (
+        project_map_schema_example,
+        selected_app_audit_schema_example,
+    )
+    from agent_manager.organization_packets import (
+        agent_bootstrap_pack_schema_example,
+        director_feature_plan_schema_example,
+        director_organization_schema_example,
+    )
+
+    store = Store(tmp_path)
+    p = seed_project()
+    p["project"]["id"] = "demo"
+    p["project"]["name"] = "Demo manager"
+    p.setdefault("onboarding", {})["chatgpt_project_name"] = "Umbrella Project"
+    store.save_project(p)
+
+    mapped = project_map_schema_example(p)
+    mapped["manager_project_id"] = "demo"
+    mapped["apps"][0]["id"] = "app-a"
+    mapped["apps"][0]["name"] = "App A"
+    store.apply_project_map(p, mapped)
+    store.select_mapped_app(p, "app-a")
+    p = store.load_project("demo")
+    assert p["onboarding"]["selected_app_id"] == "app-a"
+
+    audit = selected_app_audit_schema_example(p)
+    audit["project_id"] = "demo"
+    audit["selected_app_id"] = "app-a"
+    audit["identity"]["name"] = "App A"
+    store.apply_selected_app_audit(p, audit)
+    p = store.load_project("demo")
+    assert p["onboarding"]["stage"] == "director_organization"
+
+    org = director_organization_schema_example(p)
+    org["project_id"] = "demo"
+    org["selected_app_id"] = "app-a"
+    store.apply_director_organization_plan(p, org)
+    p = store.load_project("demo")
+
+    plan = director_feature_plan_schema_example(p)
+    plan["project_id"] = "demo"
+    plan["selected_app_id"] = "app-a"
+    plan["next_cycle"]["id"] = "DEMO-C1"
+    plan["next_cycle"]["title"] = "First cycle"
+    plan["next_cycle"]["objective"] = "Resume safely"
+    store.apply_director_feature_plan(p, plan)
+    p = store.load_project("demo")
+
+    pack = agent_bootstrap_pack_schema_example(p)
+    pack["project_id"] = "demo"
+    pack["selected_app_id"] = "app-a"
+    store.apply_agent_bootstrap_pack(p, pack)
+    p = store.load_project("demo")
+    assert p["onboarding"]["stage"] == "ready"
+    assert len(store.list_setup_artifacts("demo")) == 5
+
+    archive = store.build_archive_zip(p, include_chat_urls=False)
+    assert archive[:2] == b"PK"

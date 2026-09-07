@@ -3,3 +3,6 @@ __pycache__/
 .venv/
 .streamlit/secrets.toml
 *.pyc
+
+data/artifacts/
+data/private/

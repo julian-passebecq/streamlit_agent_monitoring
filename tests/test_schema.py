@@ -72,3 +72,41 @@ def test_bootstrap_audit_requires_agent_role_contracts():
     payload["agent_organization"]["agents"]["director"]["custom_instructions"] = ""
     errors = validate_bootstrap_audit(payload, project())
     assert any("custom_instructions" in e for e in errors)
+
+
+def test_five_step_setup_schemas_validate():
+    from agent_manager.schema import (
+        validate_agent_bootstrap_pack,
+        validate_director_feature_plan,
+        validate_director_organization_plan,
+        validate_project_map,
+        validate_selected_app_audit,
+    )
+    from agent_manager.project_mapping_packets import (
+        project_map_schema_example,
+        selected_app_audit_schema_example,
+    )
+    from agent_manager.organization_packets import (
+        agent_bootstrap_pack_schema_example,
+        director_feature_plan_schema_example,
+        director_organization_schema_example,
+    )
+
+    p = project()
+    map_payload = project_map_schema_example(p)
+    map_payload["apps"][0]["id"] = "datapass-framework"
+    map_payload["apps"][0]["name"] = "Datapass Framework"
+    assert validate_project_map(map_payload, p) == []
+
+    p.setdefault("onboarding", {})["selected_app_id"] = "datapass-framework"
+    audit = selected_app_audit_schema_example(p)
+    assert validate_selected_app_audit(audit, p) == []
+
+    org = director_organization_schema_example(p)
+    assert validate_director_organization_plan(org, p) == []
+
+    plan = director_feature_plan_schema_example(p)
+    assert validate_director_feature_plan(plan, p) == []
+
+    pack = agent_bootstrap_pack_schema_example(p)
+    assert validate_agent_bootstrap_pack(pack, p) == []
