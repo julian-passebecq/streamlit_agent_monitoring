@@ -1,7 +1,7 @@
-# Director → Companion usage
+# Companion fallback / repair usage
 
-Paste the Director's complete natural-language dispatch into the Streamlit Companion conversation after installing its bootstrap.
+The **Prompt Agent**, not Companion, is the normal path for packaging Director assignments.
 
-The Companion must return **only** an `agent_manager_run` JSON object. Paste that JSON into **Import / Returns → Import Director run**.
+Use Streamlit Companion only when an otherwise valid Director/Prompt Agent result needs normalization or repair into Agent Manager JSON. Companion must preserve intent exactly and must not add assignments, technical decisions, repository state or feature changes.
 
-The JSON may update the Git snapshot and dispatch any existing agent. It must not invent repository state or technical decisions.
+Paste the repaired `agent_manager_run` JSON into **Import / Returns → Import packaged run**.

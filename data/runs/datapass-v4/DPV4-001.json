@@ -2,13 +2,87 @@
   "schema_version": "1.0",
   "type": "agent_manager_run",
   "project_id": "datapass-v4",
-  "run": {"id":"DPV4-001","title":"Control-plane bootstrap","objective":"Validate the Agent Manager workflow with bounded agent prompts, Git metadata and Pro advisory routing.","status":"ready_to_dispatch","created_at":"2026-09-07T11:24:00+00:00","updated_at":"2026-09-07T11:24:00+00:00"},
-  "git_state": {"repository_url":"https://github.com/julian-passebecq/react_ms_fluent_2_framework","default_branch":"main","active_branch":"main","head_sha":"ce8353ee0878ca74b2fe24a1af7de657a6ba61f2","last_commit":{"sha":"ce8353ee0878ca74b2fe24a1af7de657a6ba61f2","message":"fix(v4): polish reasoning navigation and consumer clarity","author":"","committed_at":""},"last_push_at":"","deployment_url":"","snapshot_source":"project baseline","snapshot_at":"","recent_commits":[],"notes":"Replace this snapshot when the Streamlit Companion receives a newer Director/Git state."},
-  "director_context": {"summary":"Initial sample run. Replace through Companion JSON import.","decisions":[],"constraints":["No paid OpenAI API execution in V1.","Ordinary ChatGPT/Codex conversations remain manual copy/paste targets."],"open_questions":[]},
-  "dispatches": {
-    "code_agent_a": {"id":"DPV4-001-A","title":"Example bounded implementation task","status":"ready","model_label":"Codex","prompt":"This is a placeholder dispatch used to demonstrate the UI. Replace it by importing the next Director dispatch through the Streamlit Companion JSON.","dependencies":[],"acceptance_criteria":["Scope stays bounded to the Director request.","Return includes exact evidence and agent_return JSON."]},
-    "qa": {"id":"DPV4-001-QA","title":"Example QA task","status":"waiting","model_label":"GPT-5.6 Sol","prompt":"Wait for the implementation return, then validate only the acceptance criteria assigned by Director.","dependencies":["code_agent_a"],"acceptance_criteria":[]}
+  "run": {
+    "id": "DPV4-001",
+    "title": "Control-plane bootstrap",
+    "objective": "Validate the Agent Manager workflow with bounded agent prompts, Git metadata and Pro advisory routing.",
+    "status": "ready_to_dispatch",
+    "created_at": "2026-09-07T11:24:00+00:00",
+    "updated_at": "2026-09-07T11:24:00+00:00"
   },
-  "pro_context": {"needs_pro_review":false,"topics":[],"questions":[]},
-  "returns": {}
+  "git_state": {
+    "repository_url": "https://github.com/julian-passebecq/react_ms_fluent_2_framework",
+    "default_branch": "main",
+    "active_branch": "main",
+    "head_sha": "ce8353ee0878ca74b2fe24a1af7de657a6ba61f2",
+    "last_commit": {
+      "sha": "ce8353ee0878ca74b2fe24a1af7de657a6ba61f2",
+      "message": "fix(v4): polish reasoning navigation and consumer clarity",
+      "author": "",
+      "committed_at": ""
+    },
+    "last_push_at": "",
+    "deployment_url": "",
+    "snapshot_source": "project baseline",
+    "snapshot_at": "",
+    "recent_commits": [],
+    "notes": "Replace this snapshot when the Streamlit Companion receives a newer Director/Git state."
+  },
+  "director_context": {
+    "summary": "Initial sample run. Replace through Companion JSON import.",
+    "decisions": [],
+    "constraints": [
+      "No paid OpenAI API execution in V1.",
+      "Ordinary ChatGPT/Codex conversations remain manual copy/paste targets."
+    ],
+    "open_questions": []
+  },
+  "dispatches": {
+    "code_agent_a": {
+      "id": "DPV4-001-A",
+      "title": "Example bounded implementation task",
+      "status": "ready",
+      "model_label": "Codex",
+      "prompt": "This is a placeholder dispatch used to demonstrate the UI. Replace it by importing the next Director dispatch through the Streamlit Companion JSON.",
+      "dependencies": [],
+      "acceptance_criteria": [
+        "Scope stays bounded to the Director request.",
+        "Return includes exact evidence and agent_return JSON."
+      ],
+      "evidence_required": []
+    },
+    "qa": {
+      "id": "DPV4-001-QA",
+      "title": "Example QA task",
+      "status": "waiting",
+      "model_label": "GPT-5.6 Sol",
+      "prompt": "Wait for the implementation return, then validate only the acceptance criteria assigned by Director.",
+      "dependencies": ["code_agent_a"],
+      "acceptance_criteria": [],
+      "evidence_required": []
+    }
+  },
+  "pro_context": {
+    "needs_pro_review": false,
+    "topics": [],
+    "questions": []
+  },
+  "returns": {},
+  "cycle": {
+    "number": 1,
+    "phase": "dispatch",
+    "status": "active",
+    "active_agents": ["code_agent_a", "qa"],
+    "standby_agents": ["technical_lead", "code_agent_b", "audit"],
+    "started_at": "2026-09-07T11:24:00+00:00",
+    "completed_at": "",
+    "notes": "Original V1 sample cycle; use Start / Resume for a real project-state audit."
+  },
+  "cycle_history": [
+    {
+      "at": "2026-09-07T11:24:00+00:00",
+      "event": "cycle_created",
+      "note": "Seed V1 sample."
+    }
+  ]
 }
